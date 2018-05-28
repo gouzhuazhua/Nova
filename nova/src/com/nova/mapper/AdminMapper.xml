@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nova.dao.AdminDao">
+	<!-- 更新新闻库app_news-->
+	<update id="updateAppNews" parameterType="com.nova.po.AppNews">
+		UPDATE app_news SET gid = #{gid}, 
+							title = #{title}, 
+							url = #{url}, 
+							is_external_url = #{isExternalUrl}, 
+							author = #{author}, 
+							contents = #{contents}, 
+							feedlabel = #{feedlabel}, 
+							date = #{date}, 
+							feedname = #{feedname}, 
+							feed_type = #{feedType},
+							appid = #{appid}
+		WHERE id = #{id}
+	</update>
+	
+	<!-- 更新新闻库app_news:保留历史数据，使用insert -->
+	<insert id="insertAppNews" parameterType="com.nova.po.AppNews">
+		INSERT INTO app_news (
+			gid,
+			title,
+			url,
+			is_external_url,
+			author,
+			contents,
+			feedlabel,
+			date,
+			feedname,
+			feed_type,
+			appid
+		)
+		VALUES
+			(
+				#{gid}, #{title}, #{url}, #{isExternalUrl}, #{author}, #{contents}, #{feedlabel}, #{date}, #{feedname}, #{feedType}, #{appid})
+	</insert>
+	<!-- 清空APP库 -->
+	<delete id="truncateAppList">
+		set foreign_key_checks=0;
+		TRUNCATE TABLE app_list;
+	</delete>
+	
+	<!-- 更新APP库app_list -->
+	<insert id="insertAppList" parameterType="com.nova.po.App">
+		INSERT INTO app_list (id, appid, appname) VALUES (#{id}, #{appid}, #{appname})
+	</insert>
+	
+	<!-- 获取随机8条APP库数据 -->
+	<select id="selectAppRandom" resultType="java.util.Map">
+	SELECT
+		*
+	FROM
+		app_list AS t1
+	JOIN (
+		SELECT
+			ROUND(
+				RAND() * (
+					(SELECT MAX(id) FROM app_list) - (SELECT MIN(id) FROM app_list)
+				) + (SELECT MIN(id) FROM app_list)
+			) AS id
+		FROM
+			app_list
+		LIMIT 50
+	) AS t2 ON t1.id = t2.id
+	ORDER BY
+		t1.id
+	LIMIT 8;
+	</select>
+	
+	<!-- 获取用户资料 -->
+	<select id="selectUser" resultType="java.util.Map">
+		SELECT
+			username,
+			email,
+			userphone,
+			`password`,
+			steamid,
+			isAdmin
+		FROM
+			`user`
+	</select>
+	
+	<!-- 更新用户资料 -->
+	<update id="updateUser" parameterType="com.nova.po.User">
+		UPDATE `user`
+		SET email = #{email}, 
+			userphone = #{userphone}, 
+			`password` = #{password}, 
+			steamid = #{steamid}, 
+			isAdmin = #{isadmin}
+		WHERE
+			username = #{username}
+	</update>
+	
+	<!-- 根据appid修改appname和easyname -->
+	<update id="updateApp" parameterType="com.nova.po.App">
+		UPDATE app_list
+		SET appname = #{appname}, 
+			easyname =#{easyname} 
+		WHERE 
+			appid = #{appid}
+	</update>
+	
+	<!-- 向数据库插入饰品 -->
+	<insert id="insertItem" parameterType="com.nova.po.Item">
+		INSERT INTO item_list (
+			itemname,
+			itemaddress,
+			itemlevel,
+			itemabstract,
+			iteminfo,
+			itemprice,
+			itemcategory,
+			isshowed
+		)
+		VALUES
+			(
+				#{itemname}, #{itemaddress}, #{itemlevel}, #{itemabstract}, #{iteminfo}, #{itemprice}, #{itemcategory}, 0)
+	</insert>
+	
+	<!-- 更新饰品 -->
+	<update id="updateItem" parameterType="com.nova.po.Item">
+		UPDATE item_list
+		SET itemname = #{itemname}, 
+			itemaddress = #{itemaddress}, 
+			itemlevel = #{itemlevel}, 
+			itemabstract = #{itemabstract}, 
+			iteminfo = #{iteminfo}, 
+			itemprice = #{itemprice}, 
+			itemcategory = #{itemcategory}, 
+			isshowed = #{isshowed}
+		WHERE 
+			id = #{id}
+	</update>
+	
+	<!-- 更新饰品 -->
+	<delete id="deleteItem" parameterType="int">
+		DELETE FROM 
+			item_list 
+		WHERE 
+			id = #{id}
+	</delete>
+	
+	<!-- 从数据库获取app_list -->
+	<select id="selectAppListDb" resultType="java.util.Map">
+		SELECT
+			*
+		FROM
+			app_list
+		LIMIT
+			1000
+	</select>
+	
+	<!-- 从数据库获取item_list -->
+	<select id="selectItemListDb" resultType="java.util.Map">
+		SELECT
+			i.id,
+			i.itemname,
+			i.itemaddress,
+			l.levelname AS itemlevel,
+			i.itemprice,
+			c.categoryname AS itemcategory,
+			i.isshowed,
+			i.itemabstract,
+			i.iteminfo
+		FROM
+			item_list i,
+			item_category c,
+			item_level l
+		WHERE
+			i.itemcategory = c.categoryid
+		AND i.itemlevel = l.levelid
+	</select>
+	
+	<!-- 插入每日推荐app -->
+	<insert id="insertAppPush" parameterType="com.nova.po.AppPush">
+		INSERT INTO app_push (
+			appid,
+			title,
+			contents,
+			url,
+			createtime
+		)
+		VALUES
+			(
+				#{appid}, #{title}, #{contents}, #{url}, NOW()
+			)
+	</insert>
+	
+	<!-- 根据appname获取appid -->
+	<select id="selectAppIdByAppName" parameterType="String" resultType="java.util.Map">
+		SELECT
+			*
+		FROM
+			app_list
+		WHERE
+			appname = #{appname}
+	</select>
+
+</mapper>

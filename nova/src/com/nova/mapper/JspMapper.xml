@@ -1,0 +1,284 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nova.dao.JspDao">
+	<!-- 获取最新6条新闻 -->
+	<select id="selectAppNewsFromDb" resultType="java.util.Map">
+	 	SELECT
+			n.title,
+			n.url,
+			n.author,
+			n.contents,
+			FROM_UNIXTIME(n.date) AS date,
+			l.appname
+		FROM
+			app_news n,
+			app_list l
+		WHERE
+			n.appid = l.appid
+		ORDER BY
+			n.id DESC
+		LIMIT 6
+	</select>
+	
+	<!-- 获取玩家数目 -->
+	<select id="selectPlayerCount" resultType="java.util.Map">
+		SELECT
+			n.appid,
+			l.appname,
+			n.player_count,
+			CONCAT("http://store.steampowered.com/app/",n.appid,"/", l.appname) AS url
+		FROM
+			app_list l,
+			app_number_currentplayers n
+		WHERE
+			l.appid = n.appid
+		ORDER BY player_count DESC	
+	</select>
+	
+	<!-- 获取软件与硬件统计 -->
+	<select id="selectWare" resultType="java.util.Map" parameterType="int">
+		SELECT
+			*
+		FROM
+			hardware_software
+		WHERE
+			month = #{month}
+		AND
+			year = 2017
+	</select>
+	
+	<!-- 获取热门游戏id -->
+	<select id="selectHotGamesId" resultType="java.util.Map">
+		SELECT appid FROM app_number_currentplayers ORDER BY id
+	</select>
+	
+	<!-- 插入热门游戏人数 -->
+	<insert id="insertHotGamesPlayers" parameterType="com.nova.po.AppNumberCurrentplayers">
+		UPDATE app_number_currentplayers
+		SET player_count = #{playerCount}, 
+			result = #{result}
+		WHERE
+			id = #{id}
+	</insert>
+	
+	<!-- 获取所有饰品 -->
+	<select id="selectAllItems" resultType="java.util.Map">
+		SELECT
+			i.itemname,
+			l.levelname AS itemlevel,
+			c.categoryname AS itemcategory,
+			i.itemaddress,
+			i.itemprice,
+			i.itemabstract,
+			i.iteminfo,
+			i.isshowed
+		FROM
+			item_list i,
+			item_level l,
+			item_category c
+		WHERE
+			isshowed = 1
+		AND i.itemlevel = l.levelid
+		AND i.itemcategory = c.categoryid
+	</select>
+	
+	<!-- 获取玩家资料 -->
+	<select id="selectPlayerProfile" resultType="java.util.Map" parameterType="String">
+		SELECT
+			u.username,
+			u.steamid,
+			b.vacbanned,
+			b.communitybanned,
+			b.dayssincelastban,
+			b.numberofvacbans,
+			b.numberofgamebans,
+			b.economyban,
+			l.player_level,
+			s.personaname,
+			(
+				SELECT
+					state
+				FROM
+					player_state
+				WHERE
+					personastate = s.personastate
+			) AS personastate,
+			FROM_UNIXTIME(s.lastlogoff) AS lastlogoff,
+			FROM_UNIXTIME(s.timecreated) AS timecreated,
+			s.loccountrycode
+		FROM
+			USER u,
+			player_bans b,
+			player_steam_level l,
+			player_summaries s
+		WHERE
+			u.ban_id = b.ban_id
+		AND u.level_id = l.level_id
+		AND u.sum_id = s.sum_id
+		AND u.username = #{username}
+	</select>
+	
+	<!-- 获取玩家的游戏 -->
+	<select id="selectPlayerOwnedGames" resultType="java.util.Map" parameterType="String">
+		SELECT
+			u.username,
+			u.steamid,
+			o.appid,
+			o.appname,
+			CONCAT('https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/',o.appid, '/', o.img_logo_url, '.jpg') AS img_logo_url,
+			ROUND(o.playtime_forever/60) AS playtime_forever
+		FROM
+			USER u,
+			player_owned_games o
+		WHERE
+			u.ownedgames_id = o.ownedga_id
+		AND u.username = #{username}
+		ORDER BY o.playtime_forever DESC
+	</select>
+	
+	<!-- 获取玩家最近游戏 -->
+	<select id="selectPlayerRecentlyPlayedGames" resultType="java.util.Map" parameterType="String">
+		SELECT
+			u.username,
+			r.appid,
+			r.appname,
+			CONCAT('https://steamcdn-a.akamaihd.net/steamcommunity/public/images/apps/',r.appid, '/', r.img_logo_url, '.jpg') AS img_logo_url,
+			ROUND(r.playtime_2weeks/60) AS playtime_2weeks
+		FROM
+			USER u,
+			player_recently_played_games r
+		WHERE
+			u.recpyga_id = r.recpyga_id
+		AND u.username = #{username}
+	</select>
+	
+	<!-- 获取玩家csgo统计数据 -->
+	<select id="selectPlayerCsgoStats" resultType="java.util.Map" parameterType="String">
+		SELECT
+			u.username,
+			s.`name`,
+			s.`value`
+		FROM
+			player_stats_for_game s,
+			USER u
+		WHERE
+			u.stats_id = s.stats_id
+		AND s.`name` IN (
+			'total_kills',
+			'total_kills_headshot',
+			'total_deaths',
+			'total_planted_bombs',
+			'total_defused_bombs',
+			'total_kills_knife',
+			'total_wins',
+			'total_mvps'
+		)
+		AND u.username = #{username}
+		ORDER BY `name`
+	</select>
+	
+	<!-- 根据username获取steamid -->
+	<select id="selectSteamProfileByUsername" resultType="java.util.Map" parameterType="String">
+		SELECT
+			steamid,
+			sum_id,
+			ownedgames_id,
+			recpyga_id,
+			ban_id,
+			level_id,
+			stats_id
+		FROM
+			user
+		WHERE 
+			username = #{username}
+	</select>
+	
+	<!-- 更新个人资料 -->
+	<update id="updatePlayerSummaries" parameterType="com.nova.po.PlayerSummaries">
+		UPDATE player_summaries
+		SET communityvisibilitystate = #{communityvisibilitystate}, 
+			profilestate = #{profilestate},
+			personaname = #{personaname},
+			lastlogoff = #{lastlogoff},
+			commentpermission = #{commentpermission},
+			profileurl = #{profileurl},
+			avatar = #{avatar},
+			avatarmedium = #{avatarmedium},
+			avatarfull = #{avatarfull},
+			personastate = #{personastate},
+			primaryclanid = #{primaryclanid},
+			timecreated = #{timecreated},
+			gameid = #{gameid},
+			personastateflags = #{personastateflags},
+			loccountrycode = #{loccountrycode},
+			locstatecode = #{locstatecode},
+			loccityid = #{loccityid}
+		WHERE
+			sum_id = #{sumId}
+	</update>
+	
+	<!-- 更新玩家csgo资料 -->
+	<delete id="deletePlayerCsgo" parameterType="String">
+		DELETE
+		FROM
+			player_stats_for_game
+		WHERE
+			stats_id = #{statsId}
+	</delete>
+	
+	<!-- 更新玩家拥有游戏 -->
+	<delete id="deletePlayerOwnedGames" parameterType="String">
+		DELETE
+		FROM
+			player_owned_games
+		WHERE
+			ownedga_id = #{ownedGameId}
+	</delete>
+	
+	<!-- 更新玩家最近游戏 -->
+	<delete id="deletePlayerRecentlyPlayedGames" parameterType="String">
+		DELETE
+		FROM
+			player_recently_played_games
+		WHERE
+			recpyga_id = #{recentlyPlayedGamesId}
+	</delete>
+	
+	<!-- 更新玩家封禁信息 -->
+	<update id="updatePlayerBans" parameterType="com.nova.po.PlayerBans">
+		UPDATE player_bans
+		SET communitybanned = #{communitybanned},
+			vacbanned = #{vacbanned},
+			numberofvacbans = #{numberofvacbans},
+			dayssincelastban = #{dayssincelastban},
+			numberofgamebans = #{numberofgamebans},
+			economyban = #{economyban}
+		WHERE
+			ban_id = #{banId}		
+	</update>
+	
+	<!-- 更新玩家等级 -->
+	<update id="updatePlayerLevel" parameterType="com.nova.po.PlayerSteamLevel">
+		UPDATE player_steam_level
+		SET player_level = #{playerLevel}
+		WHERE
+			level_id = #{levelId}	
+	</update>
+	
+	<!-- 获取用户资料 -->
+	<select id="selectPlayerInfo" parameterType="String" resultType="java.util.Map">
+		SELECT
+			email,
+			userphone,
+			steamid,
+			password
+		FROM
+			`user`
+		WHERE
+			username = #{username}
+	</select>
+	
+	
+	
+	
+</mapper>

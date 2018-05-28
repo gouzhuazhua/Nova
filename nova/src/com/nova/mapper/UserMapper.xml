@@ -1,0 +1,168 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"  "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.nova.dao.UserDao">
+	<!-- 注册功能 -->
+	<insert id="register" parameterType="com.nova.po.User">
+		INSERT INTO USER (
+			username,
+			userphone,
+			email,
+			PASSWORD,
+			steamid,
+			isadmin,
+			ban_id,
+			level_id,
+			ownedgames_id,
+			recpyga_id,
+			sum_id,
+			stats_id
+		)
+		VALUES
+			(
+			#{username}, #{userphone}, #{email}, #{password}, #{steamid}, #{isadmin}, #{banid}, 
+			#{levelid}, #{ownedgamesid}, #{recpygaid}, #{sumid}, #{statsid})
+	</insert>
+	
+	<!-- 判断数据库中是否有相同用户名 -->
+	<select id="selectSameUsername" parameterType="String" resultType="com.nova.po.User">
+		SELECT * FROM user WHERE username = #{username}
+	</select>
+	
+	<!-- 更新用户个人资料 -->
+	<update id="updateUser" parameterType="com.nova.po.User">
+		UPDATE `user`
+		SET email = #{email},
+			userphone = #{userphone},
+			steamid = #{steamid},
+			password = #{password}
+		WHERE 
+			username = #{username}
+	</update>
+	
+	<!-- 登陆功能 -->
+	<select id="login" parameterType="String" resultType="com.nova.po.User">
+		SELECT * FROM user WHERE username = #{username}
+	</select>
+	
+	<!-- 插入玩家个人资料 -->
+	<insert id="insertPlayerSummaries" parameterType="com.nova.po.PlayerSummaries">
+		INSERT INTO player_summaries (
+			sum_id,
+			communityvisibilitystate,
+			profilestate,
+			personaname,
+			lastlogoff,
+			commentpermission,
+			profileurl,
+			avatar,
+			avatarmedium,
+			avatarfull,
+			personastate,
+			primaryclanid,
+			timecreated,
+			gameid,
+			personastateflags,
+			loccountrycode,
+			locstatecode,
+			loccityid
+		)
+		VALUES
+			(
+			#{sumId}, #{communityvisibilitystate}, #{profilestate}, #{personaname}, #{lastlogoff}, 
+			#{commentpermission}, #{profileurl}, #{avatar}, #{avatarmedium}, #{avatarfull}, 
+			#{personastate}, #{primaryclanid}, #{timecreated}, #{gameid}, #{personastateflags}, #{loccountrycode}, #{locstatecode}, #{loccityid})
+	</insert>
+	
+	<!-- 插入玩家封禁信息 -->
+	<insert id="insertPlayerBans" parameterType="com.nova.po.PlayerBans">
+		INSERT INTO player_bans (
+			ban_id,
+			steamid,
+			communitybanned,
+			vacbanned,
+			numberofvacbans,
+			dayssincelastban,
+			numberofgamebans,
+			economyban
+		)
+		VALUES
+			(
+			#{banId}, #{steamid}, #{communitybanned}, #{vacbanned}, #{numberofvacbans}, #{dayssincelastban}, #{numberofgamebans}, #{economyban})
+	</insert>
+	
+	<!-- 插入玩家拥有游戏 	-->
+	<insert id="insertPlayerOwnedGanmes" parameterType="com.nova.po.PlayerOwnedGames">
+		INSERT INTO player_owned_games (
+			ownedga_id,
+			appid,
+			appname,
+			playtime_forever,
+			img_icon_url,
+			img_logo_url,
+			has_community_visible_stats
+		)
+		VALUES
+			(
+			#{ownedgaId}, #{appid}, #{appname}, #{playtimeForever}, #{imgIconUrl}, #{imgLogoUrl}, #{hasCommunityVisibleStats})
+	</insert>
+	
+	<!-- 插入玩家steam等级 -->
+	<insert id="insertPlayerSteamLevel" parameterType="com.nova.po.PlayerSteamLevel">
+		INSERT INTO player_steam_level (level_id, player_level)
+		VALUES
+			(#{levelId}, #{playerLevel})
+	</insert>
+	
+	<!-- 插入玩家最近游戏 -->
+	<insert id="insertPlayerRecentlyPlayedGames" parameterType="com.nova.po.PlayerRecentlyPlayedGames">
+		INSERT INTO player_recently_played_games (
+			recpyga_id,
+			appid,
+			appname,
+			playtime_2weeks,
+			playtime_forever,
+			img_icon_url,
+			img_logo_url
+		)
+		VALUES
+			(
+				#{recpygaId}, #{appid}, #{appname}, #{playtime2weeks}, #{playtimeForever}, #{imgIconUrl}, #{imgLogoUrl})
+	</insert>
+	
+	<!-- 插入玩家CSGO统计资料 -->
+	<insert id="insertPlayerCsgoStats" parameterType="com.nova.po.PlayerStatsForGame">
+	INSERT INTO player_stats_for_game (
+		stats_id, 
+		appid, 
+		name, 
+		value
+	)
+	VALUES
+		(
+			#{statsId}, #{appid}, #{name}, #{value})
+		
+	</insert>
+	
+	<select id="selectPlayerAvatar" parameterType="String" resultType="String">
+		SELECT
+			avatarmedium
+		FROM
+			`user` u,
+			player_summaries p
+		WHERE
+			u.sum_id = p.sum_id
+		AND u.username = #{username} 
+	</select>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
